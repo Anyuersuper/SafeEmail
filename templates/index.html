@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeEmail</title>
+    <link rel="icon" href="http://www.anyuer.club/zb_users/avatar/0.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6bff;
+            --primary-hover: #3a5bef;
+            --background-color: #f8f9ff;
+            --card-background: #ffffff;
+            --text-color: #2c3e50;
+            --border-color: #e1e4e8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-background);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            color: var(--text-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        input[type="email"] {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="email"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
+        }
+
+        button {
+            padding: 15px 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--card-background);
+            height: 600px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .result:empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .result:empty::before {
+            content: "搜索结果将显示在这里";
+        }
+
+        .result:hover {
+            border-color: var(--primary-color);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .search-form {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SafeEmail</h1>
+        <div class="search-form">
+            <input type="email" id="emailInput" placeholder="请输入邮箱地址" required>
+            <button onclick="searchEmail()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                搜索
+            </button>
+        </div>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        function searchEmail() {
+            const email = document.getElementById('emailInput').value;
+            if (!email) {
+                alert('请输入邮箱地址');
+                return;
+            }
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div style="text-align: center; padding: 20px;">搜索中...</div>';
+
+            fetch(`/safeemail/ymail/${email}`)
+                .then(response => response.text())
+                .then(data => {
+                    try {
+                        const result = JSON.parse(data);
+                        const formattedResult = `
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                                <div style="margin-bottom: 15px;">
+                                    <strong style="color: #2c3e50; font-size: 18px;">${result.subject}</strong>
+                                </div>
+                                <div style="color: #666; margin-bottom: 10px;">
+                                    <span>发件人：</span>${result.from}
+                                </div>
+                                <div style="color: #666; margin-bottom: 10px;">
+                                    <span>收件人：</span>${result.to}
+                                </div>
+                                <div style="color: #666; margin-bottom: 15px;">
+                                    <span>时间：</span>${result.date}
+                                </div>
+                                <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #eee;">
+                                    <pre style="white-space: pre-wrap; word-wrap: break-word; margin: 0; font-family: inherit;">${result.body}</pre>
+                                </div>
+                            </div>
+                        `;
+                        document.getElementById('result').innerHTML = formattedResult;
+                    } catch (e) {
+                        document.getElementById('result').innerText = data;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('result').innerText = '搜索出错，请稍后重试';
+                    console.error('Error:', error);
+                });
+        }
+
+        // 添加回车键搜索功能
+        document.getElementById('emailInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchEmail();
+            }
+        });
+    </script>
+</body>
+</html> 
